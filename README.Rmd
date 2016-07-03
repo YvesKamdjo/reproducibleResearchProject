@@ -1,0 +1,127 @@
+---
+title: "Reproducible Research Course Project"
+author: "YE"
+date: "3 juillet 2016"
+output: html_document
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+
+## Introduction
+
+It is now possible to collect a large amount of data about personal movement using activity monitoring devices such as a Fitbit, Nike Fuelband, or Jawbone Up. These type of devices are part of the “quantified self” movement – a group of enthusiasts who take measurements about themselves regularly to improve their health, to find patterns in their behavior, or because they are tech geeks. But these data remain under-utilized both because the raw data are hard to obtain and there is a lack of statistical methods and software for processing and interpreting the data.
+
+
+## Data
+
+*   Dataset: Activity monitoring data [52K]
+
+The variables included in this dataset are:
+
+*   steps: Number of steps taking in a 5-minute interval (missing values are coded as NA)
+*   date: The date on which the measurement was taken in YYYY-MM-DD format
+*   interval: Identifier for the 5-minute interval in which measurement was taken
+
+The dataset is stored in a comma-separated-value (CSV) file and there are a total of 17,568 observations in this dataset.
+
+## Assignment
+
+###  Loading and processing data
+
+1.  Load data
+```{r, echo=TRUE}
+data <- read.csv('activity.csv', na.strings = c("", "NA"))
+dim(data)
+
+```
+2.  Preprocessing data
+```{r}
+#Remove NAs
+processData = data[!is.na(data$steps), ]  
+dim(processData)
+
+# Keep a list of all possible days
+uniqueDates <- unique(processData$date)
+
+# Keep a list of all possible intervals
+uniqueIntervals <- unique(processData$interval)
+```
+
+### What is mean total number of steps taken per day?
+
+1.  Total number of steps taken per day
+```{r, echo=TRUE}
+    NbrStepsDate <- aggregate(processData$steps, list(processData$date), sum)
+    colnames(NbrStepsDate) <- c("date", "steps")
+    
+    Smean   <- mean(NbrStepsDate$steps)
+    Smedian <- median(NbrStepsDate$steps)
+    
+    # Steps mean
+    Smean
+    
+    # Steps median
+    Smedian
+    
+```
+
+2.  Histogram of the total number of steps taken each day.
+
+```{r, echo=TRUE}
+
+library(ggplot2)
+
+ggplot(data=NbrStepsDate, aes(x=steps)) +
+  geom_histogram(fill="#f0ad4e") +  
+  ggtitle("Number of steps per Day") +
+  labs(x="Steps/Day", y="Number of times in a day")
+```
+
+### What is the average daily activity pattern?
+
+1.  Time series plot of the average number of steps taken
+
+```{r}
+    # Split the data according to the interval
+intSplit <- split(processData$steps, processData$interval)
+
+# Find the average amount of steps per time interval - ignore NA values
+AVGStepsPerInt <- sapply(intSplit, mean, na.rm=TRUE)
+
+# Plot the time-series graph
+plot(uniqueIntervals, AVGStepsPerInt, type="l",
+     main="Average number of steps per interval across all days", 
+     xlab="Interval", ylab="Average # of steps across all days", 
+     lwd=2, col="blue")
+
+# Find the location of where the maximum is
+maxIntervalDays <- max(AVGStepsPerInt, na.rm=TRUE)
+maxIndex <- as.numeric(which(AVGStepsPerInt == maxIntervalDays))
+
+# Plot a vertical line where the max is
+maxInterval <- uniqueIntervals[maxIndex]
+abline(v=maxInterval, col="red", lwd=3)
+```
+
+2.  The 5-minute interval that, on average, contains the maximum number of steps
+
+```{r}
+maxInterval
+
+```
+
+### Imputing missing values
+
+1.  Calculate and report the total number of missing values in the dataset (i.e. the total number of rows with NAs)
+
+```{r}
+
+isNA <- sum(is.na(data$steps))
+isNA
+```
+
+2.  Devise a strategy for filling in all of the missing values in the dataset. The strategy does not need to be sophisticated. For example, you could use the mean/median for that day, or the mean for that 5-minute interval, etc.
+
+
